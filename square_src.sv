@@ -9,6 +9,9 @@ module square_src
     input  logic [10:0] x, y,   // x-and  y-coordinate    
     input  logic [10:0] x0, y0, // origin of sprite 
     input  logic [4:0] ctrl,    // sprite control 
+    
+    //input logic [11:0] color, //custom color input
+    
     // sprite ram write 
     input  logic we ,
     input  logic [ADDR-1:0] addr_w,
@@ -62,7 +65,8 @@ module square_src
          2'b00:   ghost_rgb = 12'hf00;  // red 
          2'b01:   ghost_rgb = 12'hf8b;  // pink 
          2'b10:   ghost_rgb = 12'hfa0;  // orange
-         default: ghost_rgb = 12'h0ff;  // cyan
+         default: ghost_rgb = 12'h0ff;  // cyan 
+         //default: ghost_rgb = color; 
       endcase   
    // palette table
    always_comb

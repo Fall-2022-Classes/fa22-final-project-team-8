@@ -22,13 +22,16 @@ module chu_vga_sprite_square_core
    logic [CD-1:0] sprite_rgb, chrom_rgb;
    logic [10:0] x0_reg, y0_reg;
    logic [4:0] ctrl_reg;
+   //logic [11:0] color_reg;
    logic bypass_reg;
 
    // body
    // instantiate sprite generator
    square_src #(.CD(12), .KEY_COLOR(0)) square_src_unit (
        .clk(clk), .x(x), .y(y), .x0(x0_reg), .y0(y0_reg),
-       .ctrl(ctrl_reg), .we(wr_ram), .addr_w(addr[ADDR_WIDTH-1:0]),
+       .ctrl(ctrl_reg), 
+       //.color(color_reg),
+       .we(wr_ram), .addr_w(addr[ADDR_WIDTH-1:0]),
        .pixel_in(wr_data[1:0]), .sprite_rgb(sprite_rgb));
        
    // register  
@@ -38,6 +41,7 @@ module chu_vga_sprite_square_core
          y0_reg <= 0;
          bypass_reg <= 0;
          ctrl_reg <= 5'b00000;  // 2x2 red square cursor
+         //color_reg <= 0; //black
       end   
       else begin
          if (wr_x0)
@@ -48,15 +52,21 @@ module chu_vga_sprite_square_core
             bypass_reg <= wr_data[0];
          if (wr_ctrl)
             ctrl_reg <= wr_data[4:0];
+        /*
+        if (wr_color)
+            color_reg <= wr_data[11:0];
+        */
       end      
    // decoding 
    assign wr_en = write & cs;
    assign wr_ram = ~addr[13] && wr_en;
    assign wr_reg = addr[13] && wr_en;
-   assign wr_bypass = wr_reg && (addr[1:0]==2'b00);
-   assign wr_x0 = wr_reg && (addr[1:0]==2'b01);
-   assign wr_y0 = wr_reg && (addr[1:0]==2'b10);
-   assign wr_ctrl = wr_reg && (addr[1:0]==2'b11);
+   assign wr_bypass = wr_reg && (addr[1:0]==2'b00); //change to addr[2:0]==3'b000
+   assign wr_x0 = wr_reg && (addr[1:0]==2'b01); //change to addr[2:0]==3'b001
+   assign wr_y0 = wr_reg && (addr[1:0]==2'b10); //change to addr[2:0]==3'b010
+   assign wr_ctrl = wr_reg && (addr[1:0]==2'b11);//change to addr[2:0]==3'b011
+   //assign wr_color = wr_reg && (addr[2:0]==3'b100);
+   
    // chrome-key blending and multiplexing
    assign chrom_rgb = (sprite_rgb != KEY_COLOR) ? sprite_rgb : si_rgb;
    assign so_rgb = (bypass_reg) ? si_rgb : chrom_rgb;
