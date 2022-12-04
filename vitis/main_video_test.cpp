@@ -31,23 +31,68 @@ void osd_init(OsdCore *osd_p, FrameCore *frame_p) {
 	frame_p->bypass(0);
 
 	frame_p->clr_screen(0x001);
-	osd_p->set_color(0x0f0, 0x001); // dark gray/green
+	osd_p->set_color(0x0f0, 0xfff);
 
-	int x = 0;
-	int y = 0;
+	for (int i = 0; i < 640; i++) {
+		for(int j = 400+12; j < 480; j++) {
+			frame_p->wr_pix(i, j, 0xfff);
+		}
+	}
 
-	osd_p->wr_char(x, y, 72, 0);
-	osd_p->wr_char(x+1, y, 69, 0);
-	osd_p->wr_char(x+2, y, 76, 0);
-	osd_p->wr_char(x+3, y, 76, 0);
-	osd_p->wr_char(x+4, y, 79, 0);
+	int x = 14;
+	int y = 27;
+
+	osd_p->wr_char(x-1, y, 30, 0); //up
+	osd_p->wr_char(x-1, y+1, 31, 0); //down
+	osd_p->wr_char(x, y+1, 16, 0); //left
+	osd_p->wr_char(x-2, y+1, 17, 0); //right
+
+	osd_p->wr_char(x+3, y+1, 84, 0);
+	osd_p->wr_char(x+4, y+1, 79, 0);
+	osd_p->wr_char(x+5, y+1, 0, 0);
+	osd_p->wr_char(x+6, y+1, 77, 0);
+	osd_p->wr_char(x+7, y+1, 79, 0);
+	osd_p->wr_char(x+8, y+1, 86, 0);
+	osd_p->wr_char(x+9, y+1, 69, 0);
+
+
+	x += 15;
+	osd_p->wr_char(x, y+1, 65, 0);
+	osd_p->wr_char(x+1, y+1, 68, 0);
+	osd_p->wr_char(x+2, y+1, 67, 0);
+	osd_p->wr_char(x+3, y+1, 61, 0);
+	osd_p->wr_char(x+4, y+1, 67, 0);
+	osd_p->wr_char(x+5, y+1, 79, 0);
+	osd_p->wr_char(x+6, y+1, 76, 0);
+	osd_p->wr_char(x+7, y+1, 79, 0);
+	osd_p->wr_char(x+8, y+1, 82, 0);
+
+	x += 15;
+	osd_p->wr_char(x, y+1, 83, 0);
+	osd_p->wr_char(x+1, y+1, 87, 0);
+	osd_p->wr_char(x+2, y+1, 48, 0);
+	osd_p->wr_char(x+3, y+1, 61, 0);
+	osd_p->wr_char(x+4, y+1, 69, 0);
+	osd_p->wr_char(x+5, y+1, 82, 0);
+	osd_p->wr_char(x+6, y+1, 65, 0);
+	osd_p->wr_char(x+7, y+1, 83, 0);
+	osd_p->wr_char(x+8, y+1, 69, 0);
+	osd_p->wr_char(x+9, y+1, 82, 0);
+
+	x += 15;
+	osd_p->wr_char(x, y+1, 82, 0);
+	osd_p->wr_char(x+1, y+1, 61, 0);
+	osd_p->wr_char(x+2, y+1, 82, 0);
+	osd_p->wr_char(x+3, y+1, 69, 0);
+	osd_p->wr_char(x+4, y+1, 83, 0);
+	osd_p->wr_char(x+5, y+1, 69, 0);
+	osd_p->wr_char(x+6, y+1, 84, 0);
+
 }
 
 int ps2_check(Ps2Core *ps2_p) {
 	int dir;
 	char input = 0x00;
-
-	//())
 	ps2_p->get_kb_ch(&input);
 
 
@@ -63,6 +108,9 @@ int ps2_check(Ps2Core *ps2_p) {
 			break;
 		case 54:
 			dir = 4;
+			break;
+		case 114:
+			dir = 5;
 			break;
 		default: dir = 0;
 	}
@@ -81,7 +129,8 @@ int read_adc(XadcCore *adc_p) {
 	else return 3;
 
 }
-void ghost_check(SpriteCore *ghost_p, Ps2Core *ps2_p, XadcCore *adc_p, OsdCore *osd_p, FrameCore *frame_p) {
+void ghost_check(SpriteCore *ghost_p, Ps2Core *ps2_p, XadcCore *adc_p,
+		OsdCore *osd_p, FrameCore *frame_p, GpiCore *sw_p) {
   int x, y;
   int dir;
   int color2;
@@ -91,36 +140,42 @@ void ghost_check(SpriteCore *ghost_p, Ps2Core *ps2_p, XadcCore *adc_p, OsdCore *
    ghost_p->bypass(0);
    ghost_p->wr_ctrl(0x1B);  //animation; blue ghost
    x = 320;
-   y = 240;
+   y = 200;
    ghost_p->move_xy(x, y); //initial
 
    while (1) {
+
 		dir = ps2_check(ps2_p);
+		if(dir == 5) break;
+
 		int color = read_adc(adc_p);
-		ghost_p->wr_ctrl(color << 3 | 3);
+		int sw0 = sw_p->read(0);
+		if(sw0) ghost_p->wr_ctrl(color << 3 | 2);
+		else ghost_p->wr_ctrl(color << 3 | 3);
+
 
 		switch (dir) {
 		   case 1:
-			   y = y + 5;
+			   y = y + 4;
 			   break;
 		   case 2:
-			   y = y - 5;
+			   y = y - 4;
 			   break;
 		   case 3:
-			   x = x - 5;
+			   x = x - 4;
 			   break;
 		   case 4:
-			   x = x + 5;
+			   x = x + 4;
 			   break;
 		   default:;
 		}
 
-		y = y % 480;
+		y = y % 400;
 		x = x % 640;
 		ghost_p->move_xy(x, y);
 
-		//uart.disp(color2);
-		//uart.disp("\n\r");
+		if(x < 0) x = 636;
+		if(y < 0) y = 396;
 
 		switch(color) {
 			case 0:
@@ -135,9 +190,9 @@ void ghost_check(SpriteCore *ghost_p, Ps2Core *ps2_p, XadcCore *adc_p, OsdCore *
 			default: color2 = 0x0FF;
 		}
 
-		frame_draw(x, y, frame_p, color2);
+		if(sw0) frame_draw(x-1, y, frame_p, 0x001);
+		else frame_draw(x-1, y, frame_p, color2);
 
-		//sleep_ms();
    }
 
 }
@@ -165,12 +220,9 @@ int main() {
       ghost.bypass(1);
       osd.bypass(1);
       mouse.bypass(1);
-      //sleep_ms(3000);
 
-      //ghost_check(&ghost, &ps2);
-      //uart.disp(ps2_check(&ps2));
-      //uart.disp("\n\r");
 
-	   ghost_check(&ghost, &ps2, &adc, &osd, &frame);
+	  ghost_check(&ghost, &ps2, &adc, &osd, &frame, &sw);
+
    } // while
 } //main
